@@ -19,7 +19,7 @@
          │                             │                             │
          ├─────────────────────────────►                             │
          │ 2. Write JSON message       │                             │
-         │ to ~/.config/.../claude-    │                             │
+         │ to ~/.config/.../mcp-       │                             │
          │ messages.json               │                             │
          │                             │                             │
          │                             │ 3. File watcher detects     │

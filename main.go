@@ -31,6 +31,12 @@ type MCPError struct {
 	Message string `json:"message"`
 }
 
+type MCPNotification struct {
+	JSONRPC string      `json:"jsonrpc"`
+	Method  string      `json:"method"`
+	Params  interface{} `json:"params"`
+}
+
 type InitializeResult struct {
 	ProtocolVersion string       `json:"protocolVersion"`
 	Capabilities    Capabilities `json:"capabilities"`
@@ -78,11 +84,17 @@ type ToolSchema struct {
 // Message queue for lazygit messages
 var messageQueue []string
 var messageFile string
+var currentProjectRoot string
+var subscribers []string // Track resource subscribers
 
 func main() {
-	// Setup message file path
-	configDir := os.Getenv("HOME") + "/.config/jesseduffield/lazygit"
-	messageFile = filepath.Join(configDir, "claude-messages.json")
+	// Setup message file path following XDG Base Directory spec
+	configDir := getConfigDir()
+	messageFile = filepath.Join(configDir, "jesseduffield/lazygit/mcp-messages.json")
+
+	// Get current project root (where Claude Code was launched)
+	currentProjectRoot = getCurrentProjectRoot()
+	log.Printf("MCP server started for project: %s", currentProjectRoot)
 
 	// Start file watcher
 	go watchMessageFile()
@@ -93,6 +105,33 @@ func main() {
 		line := scanner.Text()
 		handleMCPRequest(line)
 	}
+}
+
+func getConfigDir() string {
+	// Follow XDG Base Directory specification
+	if xdgConfig := os.Getenv("XDG_CONFIG_HOME"); xdgConfig != "" {
+		return xdgConfig
+	}
+	// Fallback to ~/.config
+	return filepath.Join(os.Getenv("HOME"), ".config")
+}
+
+func getCurrentProjectRoot() string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+	
+	// Find .git directory
+	current := cwd
+	for current != "/" {
+		if _, err := os.Stat(filepath.Join(current, ".git")); err == nil {
+			return current
+		}
+		current = filepath.Dir(current)
+	}
+	
+	return cwd // fallback to current directory
 }
 
 func watchMessageFile() {
@@ -137,10 +176,11 @@ func readMessageFile() {
 	}
 
 	var message struct {
-		File    string `json:"file"`
-		Line    string `json:"line"`
-		Comment string `json:"comment"`
-		Time    string `json:"time"`
+		File        string `json:"file"`
+		Line        string `json:"line"`
+		Comment     string `json:"comment"`
+		ProjectRoot string `json:"project_root"`
+		Time        string `json:"time"`
 	}
 
 	if err := json.Unmarshal(data, &message); err != nil {
@@ -148,10 +188,21 @@ func readMessageFile() {
 		return
 	}
 
+	// Check if message is for this project
+	if message.ProjectRoot != "" && message.ProjectRoot != currentProjectRoot {
+		log.Printf("Message for different project: %s (current: %s)", message.ProjectRoot, currentProjectRoot)
+		return
+	}
+
 	// Add to message queue
 	formattedMessage := fmt.Sprintf("File: %s\nLine: %s\nComment: %s\n\nPlease improve this code.", 
 		message.File, message.Line, message.Comment)
 	messageQueue = append(messageQueue, formattedMessage)
+	
+	log.Printf("Message received for project: %s", currentProjectRoot)
+
+	// Send notification to Claude
+	sendNotification(fmt.Sprintf("New message from lazygit: %s", message.Comment))
 
 	// Clean up the message file
 	os.Remove(messageFile)
@@ -177,6 +228,10 @@ func handleMCPRequest(line string) {
 		handleToolsList(req)
 	case "tools/call":
 		handleToolsCall(req)
+	case "resources/subscribe":
+		handleResourcesSubscribe(req)
+	case "resources/unsubscribe":
+		handleResourcesUnsubscribe(req)
 	default:
 		sendError(req.ID, -32601, "Method not found")
 	}
@@ -320,4 +375,61 @@ func sendError(id interface{}, code int, message string) {
 	}
 	data, _ := json.Marshal(resp)
 	fmt.Println(string(data))
+}
+
+func handleResourcesSubscribe(req MCPRequest) {
+	params := req.Params.(map[string]interface{})
+	uri := params["uri"].(string)
+	
+	if uri == "lazygit://messages" {
+		subscribers = append(subscribers, uri)
+		sendResponse(req.ID, map[string]interface{}{})
+		log.Printf("Resource subscribed: %s", uri)
+	} else {
+		sendError(req.ID, -32602, "Invalid resource URI")
+	}
+}
+
+func handleResourcesUnsubscribe(req MCPRequest) {
+	params := req.Params.(map[string]interface{})
+	uri := params["uri"].(string)
+	
+	// Remove from subscribers
+	for i, sub := range subscribers {
+		if sub == uri {
+			subscribers = append(subscribers[:i], subscribers[i+1:]...)
+			break
+		}
+	}
+	sendResponse(req.ID, map[string]interface{}{})
+	log.Printf("Resource unsubscribed: %s", uri)
+}
+
+func sendNotification(message string) {
+	// Send resource update notification to subscribers
+	if len(subscribers) > 0 {
+		notification := MCPNotification{
+			JSONRPC: "2.0",
+			Method:  "notifications/resources/updated",
+			Params: map[string]interface{}{
+				"uri":   "lazygit://messages",
+				"title": "New lazygit comment received",
+			},
+		}
+		data, _ := json.Marshal(notification)
+		fmt.Println(string(data))
+		log.Printf("Sent resource update notification with title")
+	}
+	
+	// Also send a log notification for visibility
+	logNotification := MCPNotification{
+		JSONRPC: "2.0",
+		Method:  "notifications/message",
+		Params: map[string]interface{}{
+			"level":   "info",
+			"message": message,
+		},
+	}
+	logData, _ := json.Marshal(logNotification)
+	fmt.Println(string(logData))
 }

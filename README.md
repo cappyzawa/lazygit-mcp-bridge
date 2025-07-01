@@ -61,7 +61,7 @@ SELECTED_FILE="$1"
 COMMENT="$2"
 
 # Send message to MCP server
-MESSAGE_FILE="$HOME/.config/jesseduffield/lazygit/claude-messages.json"
+MESSAGE_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/jesseduffield/lazygit/mcp-messages.json"
 cat > "$MESSAGE_FILE" <<EOF
 {
   "file": "$SELECTED_FILE",
