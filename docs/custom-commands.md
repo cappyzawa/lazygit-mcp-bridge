@@ -27,14 +27,16 @@ Create a `.claude/commands/` directory in your project root and place the follow
 ```markdown
 ---
 allowed-tools: mcp__lazygit-mcp-bridge__check_lazygit_messages
-description: Check for new lazygit comments and provide code improvement suggestions
+description: Check for new lazygit comments and provide concise code improvement suggestions
 ---
 
 # lazygit Comment Check
 
-Check for new comments from lazygit and provide code improvement suggestions based on the received feedback.
+Check for new comments from lazygit and provide concise, focused code improvement suggestions.
 
-Arguments: $ARGUMENTS (optional - can specify additional context or instructions)
+Keep responses brief and actionable.
+
+Additional context: $ARGUMENTS
 ```
 
 **Usage**:
@@ -42,34 +44,7 @@ Arguments: $ARGUMENTS (optional - can specify additional context or instructions
 /project:lg
 /project:lg keep it concise
 /project:lg focus on security
-```
-
-### `/project:lazygit` - Detailed Analysis
-
-**File**: `.claude/commands/lazygit.md`
-
-```markdown
----
-allowed-tools: mcp__lazygit-mcp-bridge__check_lazygit_messages
-description: Check lazygit messages and provide detailed code analysis with improvement suggestions
----
-
-# lazygit Code Review
-
-Retrieve the latest comment from lazygit and provide:
-1. Code analysis of the specified file and line
-2. Specific improvement suggestions
-3. Best practices recommendations
-4. Potential issues or optimizations
-
-Additional context: $ARGUMENTS
-```
-
-**Usage**:
-```
-/project:lazygit
-/project:lazygit focus on performance
-/project:lazygit apply Go best practices
+/project:lg apply Go best practices
 ```
 
 ## Benefits
@@ -100,24 +75,24 @@ Additional context: $ARGUMENTS
 ### Custom Command Workflow
 1. Create comment in lazygit
 2. Execute `/project:lg` in Claude
-3. Instantly receive code improvement suggestions
+3. Instantly receive concise code improvement suggestions
 
 ## Advanced Usage Examples
 
 ### Analysis from Specific Perspectives
 
 ```
-/project:lazygit analyze from security perspective
-/project:lazygit focus on performance optimization
-/project:lazygit emphasize code readability
+/project:lg analyze from security perspective
+/project:lg focus on performance optimization
+/project:lg emphasize code readability
 ```
 
 ### Language-Specific Analysis
 
 ```
-/project:lazygit follow Go idioms
-/project:lazygit apply Rust best practices
-/project:lazygit prioritize TypeScript type safety
+/project:lg follow Go idioms
+/project:lg apply Rust best practices
+/project:lg prioritize TypeScript type safety
 ```
 
 ## Troubleshooting
