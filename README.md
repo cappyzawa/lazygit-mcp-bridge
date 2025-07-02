@@ -37,7 +37,7 @@ Add to your Claude Code MCP settings:
 
 Or use the CLI:
 ```bash
-claude mcp add lazygit-mcp-bridge "lazygit-mcp-bridge server"
+claude mcp add lazygit-mcp-bridge lazygit-mcp-bridge server
 ```
 
 ### 3. Configure lazygit
