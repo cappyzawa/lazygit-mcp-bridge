@@ -18,7 +18,7 @@
 go.work
 
 # Build output
-lazygit-mcp-bridge
+/lazygit-mcp-bridge
 build/
 
 # IDE
