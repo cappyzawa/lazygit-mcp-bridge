@@ -32,7 +32,9 @@ description: Check for new lazygit comments and provide concise code improvement
 
 # lazygit Comment Check
 
-Check for new comments from lazygit and provide concise, focused code improvement suggestions.
+Use the MCP tool `mcp__lazygit-mcp-bridge__check_lazygit_messages` to retrieve the latest comment from lazygit.
+
+Then provide concise, focused code improvement suggestions based on the received message.
 
 Keep responses brief and actionable.
 

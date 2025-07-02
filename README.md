@@ -79,11 +79,42 @@ chmod +x ~/.config/jesseduffield/lazygit/send-to-ai.sh
 
 ## Usage
 
+### Basic Usage
+
 1. Open lazygit
 2. Navigate to the diff view
 3. Press `Ctrl+Y`
 4. Enter your comment
 5. The AI assistant receives your message automatically!
+
+### Using Custom Commands (Recommended)
+
+For the best experience, set up a custom Claude Code command:
+
+1. Create the command directory in your project:
+   ```bash
+   mkdir -p .claude/commands
+   ```
+
+2. Create `.claude/commands/lg.md`:
+   ```markdown
+   ---
+   allowed-tools: mcp__lazygit-mcp-bridge__check_lazygit_messages
+   description: Check for new lazygit comments and provide concise code improvement suggestions
+   ---
+
+   # lazygit Comment Check
+
+   Use the MCP tool `mcp__lazygit-mcp-bridge__check_lazygit_messages` to retrieve the latest comment from lazygit.
+
+   Then provide concise, focused code improvement suggestions based on the received message.
+
+   Keep responses brief and actionable.
+
+   Additional context: $ARGUMENTS
+   ```
+
+3. Now you can use `/project:lg` in Claude Code to instantly check for lazygit messages!
 
 ## How it works
 
@@ -118,6 +149,7 @@ MIT
 
 - [Architecture Overview](docs/architecture.md) - System design and components
 - [MCP Protocol Specification](docs/mcp-protocol.md) - Protocol implementation details
+- [Custom Commands Guide](docs/custom-commands.md) - Advanced Claude Code integration
 - [Development Guide](docs/development.md) - Building and contributing
 
 ## Contributing
