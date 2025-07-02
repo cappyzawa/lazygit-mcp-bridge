@@ -82,7 +82,7 @@ var sendCmd = &cobra.Command{
     Use:   "send",
     Short: "Send a message from lazygit to AI",
     RunE: func(cmd *cobra.Command, args []string) error {
-        return client.Send(file, line, comment)
+        return client.Send(file, comment)
     },
 }
 ```
@@ -101,7 +101,6 @@ type MCPRequest struct {
 // Message structure for storage with deduplication
 type LazygitMessage struct {
     File        string `json:"file"`
-    Line        string `json:"line"`
     Comment     string `json:"comment"`
     ProjectRoot string `json:"project_root"`
     Time        string `json:"time"`
@@ -116,7 +115,7 @@ func Run() error { ... }
 
 ```go
 // Send message to the MCP server
-func Send(file, line, comment string) error {
+func Send(file, comment string) error {
     // Create message
     // Write to JSON file
     // Return success/error
@@ -190,7 +189,7 @@ go install ./cmd/lazygit-mcp-bridge
 ./build/lazygit-mcp-bridge server
 
 # Terminal 2: Test the send command
-./build/lazygit-mcp-bridge send --file test.go --line 42 --comment "Add error handling"
+./build/lazygit-mcp-bridge send --file test.go --comment "Add error handling for line 42"
 ```
 
 2. **Test MCP protocol:**
@@ -254,7 +253,7 @@ func readMessageFile() {
 
 ### Deduplication Algorithm
 
-1. **Hash Generation**: SHA-256 of file + line + comment + time
+1. **Hash Generation**: SHA-256 of file + comment + time
 2. **Duplicate Check**: Compare against existing message hashes
 3. **Skip Processing**: Ignore messages with existing hashes
 4. **Memory Efficiency**: Only store hash string, not full message content

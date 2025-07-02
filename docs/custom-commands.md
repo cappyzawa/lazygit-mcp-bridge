@@ -26,7 +26,6 @@ customCommands:
   command: |
     lazygit-mcp-bridge send \
       --file "{{ .SelectedPath }}" \
-      --line "{{ .SelectedLine }}" \
       --comment "{{ index .PromptResponses 0 }}"
 ```
 

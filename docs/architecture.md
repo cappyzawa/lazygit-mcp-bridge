@@ -49,8 +49,7 @@
 ```json
 {
   "file": "path/to/file.go",
-  "line": "42",
-  "comment": "User's comment about the code",
+  "comment": "User's comment about the code (including line info if needed)",
   "project_root": "/path/to/project",
   "time": "2025-07-01T22:45:00Z"
 }
@@ -60,8 +59,7 @@
 ```json
 {
   "file": "path/to/file.go",
-  "line": "42", 
-  "comment": "User's comment about the code",
+  "comment": "User's comment about the code (including line info if needed)",
   "project_root": "/path/to/project",
   "time": "2025-07-01T22:45:00Z",
   "hash": "sha256_hash_for_deduplication"

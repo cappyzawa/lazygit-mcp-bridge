@@ -10,13 +10,12 @@ import (
 
 type Message struct {
 	File        string `json:"file"`
-	Line        string `json:"line"`
 	Comment     string `json:"comment"`
 	ProjectRoot string `json:"project_root"`
 	Time        string `json:"time"`
 }
 
-func Send(file, line, comment string) error {
+func Send(file, comment string) error {
 	// Get config directory
 	configDir := getConfigDir()
 	messageFile := filepath.Join(configDir, "jesseduffield/lazygit/mcp-messages.json")
@@ -33,7 +32,6 @@ func Send(file, line, comment string) error {
 	// Create message
 	msg := Message{
 		File:        file,
-		Line:        line,
 		Comment:     comment,
 		ProjectRoot: projectRoot,
 		Time:        time.Now().Format(time.RFC3339),
@@ -50,7 +48,7 @@ func Send(file, line, comment string) error {
 		return fmt.Errorf("failed to write message file: %w", err)
 	}
 	
-	fmt.Printf("Message sent successfully for %s:%s\n", file, line)
+	fmt.Printf("Message sent successfully for %s\n", file)
 	return nil
 }
 

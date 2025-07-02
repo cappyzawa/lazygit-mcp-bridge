@@ -87,7 +87,6 @@ type ToolSchema struct {
 // Message structure for storage
 type LazygitMessage struct {
 	File        string `json:"file"`
-	Line        string `json:"line"`
 	Comment     string `json:"comment"`
 	ProjectRoot string `json:"project_root"`
 	Time        string `json:"time"`
@@ -196,7 +195,6 @@ func readMessageFile() {
 
 	var rawMessage struct {
 		File        string `json:"file"`
-		Line        string `json:"line"`
 		Comment     string `json:"comment"`
 		ProjectRoot string `json:"project_root"`
 		Time        string `json:"time"`
@@ -214,7 +212,7 @@ func readMessageFile() {
 	}
 
 	// Create hash for deduplication (content + time)
-	hashInput := strings.Join([]string{rawMessage.File, rawMessage.Line, rawMessage.Comment, rawMessage.Time}, "|")
+	hashInput := strings.Join([]string{rawMessage.File, rawMessage.Comment, rawMessage.Time}, "|")
 	hash := sha256.Sum256([]byte(hashInput))
 	hashString := hex.EncodeToString(hash[:])
 
@@ -229,7 +227,6 @@ func readMessageFile() {
 	// Create new message with hash
 	message := LazygitMessage{
 		File:        rawMessage.File,
-		Line:        rawMessage.Line,
 		Comment:     rawMessage.Comment,
 		ProjectRoot: rawMessage.ProjectRoot,
 		Time:        rawMessage.Time,
@@ -320,8 +317,8 @@ func handleResourcesRead(req MCPRequest) {
 			// Format all messages
 			var allMessages []string
 			for i, msg := range messageQueue {
-				formattedMessage := fmt.Sprintf("Message %d:\nFile: %s\nLine: %s\nComment: %s\nTime: %s\n\nPlease improve this code.", 
-					i+1, msg.File, msg.Line, msg.Comment, msg.Time)
+				formattedMessage := fmt.Sprintf("Message %d:\nFile: %s\nComment: %s\nTime: %s\n\nPlease improve this code.", 
+					i+1, msg.File, msg.Comment, msg.Time)
 				allMessages = append(allMessages, formattedMessage)
 			}
 			
@@ -385,8 +382,8 @@ func handleToolsCall(req MCPRequest) {
 			// Format all messages
 			var allMessages []string
 			for i, msg := range messageQueue {
-				formattedMessage := fmt.Sprintf("Message %d:\nFile: %s\nLine: %s\nComment: %s\nTime: %s\n\nPlease improve this code.", 
-					i+1, msg.File, msg.Line, msg.Comment, msg.Time)
+				formattedMessage := fmt.Sprintf("Message %d:\nFile: %s\nComment: %s\nTime: %s\n\nPlease improve this code.", 
+					i+1, msg.File, msg.Comment, msg.Time)
 				allMessages = append(allMessages, formattedMessage)
 			}
 			

@@ -56,7 +56,6 @@ customCommands:
   command: |
     lazygit-mcp-bridge send \
       --file "{{ .SelectedPath }}" \
-      --line "{{ .SelectedLine }}" \
       --comment "{{ index .PromptResponses 0 }}"
 ```
 
@@ -116,7 +115,7 @@ For the best experience, set up a custom Claude Code command:
 lazygit-mcp-bridge server
 
 # Send a message from lazygit (usually called automatically)
-lazygit-mcp-bridge send --file main.go --line 42 --comment "Add error handling"
+lazygit-mcp-bridge send --file main.go --comment "Add error handling for line 42"
 
 # Show help
 lazygit-mcp-bridge --help

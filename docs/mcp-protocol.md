@@ -226,7 +226,7 @@ AI Assistant                    MCP Bridge
 The MCP bridge now supports accumulating multiple messages from lazygit before retrieval:
 
 - **Queue Management**: Messages are stored in an in-memory array
-- **Deduplication**: SHA-256 hash prevents duplicate messages (based on file + line + comment + time)
+- **Deduplication**: SHA-256 hash prevents duplicate messages (based on file + comment + time)
 - **Retention Limit**: Maximum 10 messages retained in queue
 - **Batch Retrieval**: All accumulated messages returned in single response
 - **Clear-on-Read**: Queue and file cleared after successful tool call
@@ -295,8 +295,7 @@ Please improve this code.
     "level": "info",
     "message": "New message from lazygit",
     "data": {
-      "file": "src/main.go",
-      "line": "42"
+      "file": "src/main.go"
     }
   }
 }

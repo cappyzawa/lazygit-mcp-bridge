@@ -50,14 +50,13 @@ var sendCmd = &cobra.Command{
 This replaces the need for a separate shell script.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		file, _ := cmd.Flags().GetString("file")
-		line, _ := cmd.Flags().GetString("line")
 		comment, _ := cmd.Flags().GetString("comment")
 		
-		if file == "" || line == "" || comment == "" {
-			return fmt.Errorf("--file, --line, and --comment are required")
+		if file == "" || comment == "" {
+			return fmt.Errorf("--file and --comment are required")
 		}
 		
-		return client.Send(file, line, comment)
+		return client.Send(file, comment)
 	},
 }
 
@@ -68,10 +67,8 @@ func init() {
 	
 	// Add flags to send command
 	sendCmd.Flags().StringP("file", "f", "", "File path (required)")
-	sendCmd.Flags().StringP("line", "l", "", "Line number or range (required)")
 	sendCmd.Flags().StringP("comment", "c", "", "Comment for AI (required)")
 	sendCmd.MarkFlagRequired("file")
-	sendCmd.MarkFlagRequired("line")
 	sendCmd.MarkFlagRequired("comment")
 }
 
