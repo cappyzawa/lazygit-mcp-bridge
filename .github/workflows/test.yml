@@ -1,0 +1,92 @@
+name: Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.24', '1.25']
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ matrix.go-version }}-
+          ${{ runner.os }}-go-
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Verify dependencies
+      run: go mod verify
+
+    - name: Run go vet
+      run: go vet ./...
+
+    - name: Run tests
+      run: go test -v -race -coverprofile=coverage.out ./...
+
+    - name: Check test coverage
+      run: go tool cover -html=coverage.out -o coverage.html
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v4
+      if: matrix.go-version == '1.24'
+      with:
+        file: ./coverage.out
+        flags: unittests
+        name: codecov-umbrella
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+
+    - name: Build binary
+      run: make build
+
+    - name: Test CLI help
+      run: ./build/lazygit-mcp-bridge --help
+
+    - name: Test server subcommand
+      run: timeout 5s ./build/lazygit-mcp-bridge server || [ $? -eq 124 ]
+
+    - name: Test send subcommand
+      run: |
+        # Test validation (should fail without required flags)
+        if ./build/lazygit-mcp-bridge send; then
+          echo "Expected send command to fail without required flags"
+          exit 1
+        fi
+        echo "Send command validation works correctly"
