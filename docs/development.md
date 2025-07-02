@@ -55,8 +55,18 @@ type MCPRequest struct {
     Params  interface{} `json:"params,omitempty"`
 }
 
-// Message queue for storing lazygit messages
-var messageQueue []string
+// Message structure for storage with deduplication
+type LazygitMessage struct {
+    File        string `json:"file"`
+    Line        string `json:"line"`
+    Comment     string `json:"comment"`
+    ProjectRoot string `json:"project_root"`
+    Time        string `json:"time"`
+    Hash        string `json:"hash"` // SHA-256 for deduplication
+}
+
+// Message queue for storing multiple lazygit messages
+var messageQueue []LazygitMessage
 
 // File watcher for monitoring message file
 func watchMessageFile() { ... }
@@ -108,6 +118,73 @@ claude
 
 # In lazygit, press Ctrl+Y and enter a comment
 # Check if Claude receives the message
+```
+
+## Message Processing Features
+
+### Multiple Message Support
+
+The system now supports accumulating multiple messages before delivery:
+
+```go
+// Message accumulation with deduplication
+func readMessageFile() {
+    // Read raw message from file
+    var rawMessage struct { ... }
+    
+    // Create hash for deduplication
+    hashInput := strings.Join([]string{
+        rawMessage.File, rawMessage.Line, 
+        rawMessage.Comment, rawMessage.Time}, "|")
+    hash := sha256.Sum256([]byte(hashInput))
+    hashString := hex.EncodeToString(hash[:])
+    
+    // Check for duplicates
+    for _, existingMsg := range messageQueue {
+        if existingMsg.Hash == hashString {
+            return // Skip duplicate
+        }
+    }
+    
+    // Add to queue with retention limit
+    messageQueue = append(messageQueue, message)
+    if len(messageQueue) > 10 {
+        messageQueue = messageQueue[1:] // Keep last 10
+    }
+}
+```
+
+### Deduplication Algorithm
+
+1. **Hash Generation**: SHA-256 of file + line + comment + time
+2. **Duplicate Check**: Compare against existing message hashes
+3. **Skip Processing**: Ignore messages with existing hashes
+4. **Memory Efficiency**: Only store hash string, not full message content
+
+### Batch Message Delivery
+
+```go
+func handleToolsCall(req MCPRequest) {
+    if name == "check_lazygit_messages" {
+        if len(messageQueue) > 0 {
+            // Format all messages with separators
+            var allMessages []string
+            for i, msg := range messageQueue {
+                formattedMessage := fmt.Sprintf(
+                    "Message %d:\nFile: %s\nLine: %s\nComment: %s\nTime: %s\n\nPlease improve this code.",
+                    i+1, msg.File, msg.Line, msg.Comment, msg.Time)
+                allMessages = append(allMessages, formattedMessage)
+            }
+            
+            // Join with clear separators
+            finalMessage := strings.Join(allMessages, "\n" + strings.Repeat("-", 50) + "\n\n")
+            
+            // Clear queue after successful delivery
+            messageQueue = []LazygitMessage{}
+            os.Remove(messageFile)
+        }
+    }
+}
 ```
 
 ## Adding New Features

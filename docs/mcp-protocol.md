@@ -125,7 +125,7 @@ AI Assistant                    MCP Bridge
 }
 ```
 
-**Response (with message):**
+**Response (with multiple messages):**
 ```json
 {
   "jsonrpc": "2.0",
@@ -134,7 +134,7 @@ AI Assistant                    MCP Bridge
     "content": [
       {
         "type": "text",
-        "text": "File: src/main.go\nLine: 42\nComment: This function needs error handling\n\nPlease improve this code."
+        "text": "Message 1:\nFile: src/main.go\nLine: 42\nComment: This function needs error handling\nTime: 2025-07-01T10:30:00Z\n\nPlease improve this code.\n\n--------------------------------------------------\n\nMessage 2:\nFile: src/utils.go\nLine: 15\nComment: Add input validation\nTime: 2025-07-01T10:32:00Z\n\nPlease improve this code."
       }
     ]
   }
@@ -202,7 +202,7 @@ AI Assistant                    MCP Bridge
 }
 ```
 
-**Response:**
+**Response (with multiple messages):**
 ```json
 {
   "jsonrpc": "2.0",
@@ -212,12 +212,54 @@ AI Assistant                    MCP Bridge
       {
         "uri": "lazygit://messages",
         "mimeType": "text/plain",
-        "text": "File: src/main.go\nLine: 42\nComment: Add validation here\n\nPlease improve this code."
+        "text": "Message 1:\nFile: src/main.go\nLine: 42\nComment: Add validation here\nTime: 2025-07-01T10:30:00Z\n\nPlease improve this code.\n\n--------------------------------------------------\n\nMessage 2:\nFile: src/server.go\nLine: 89\nComment: Handle timeout properly\nTime: 2025-07-01T10:33:00Z\n\nPlease improve this code."
       }
     ]
   }
 }
 ```
+
+## Message Processing Details
+
+### Multiple Message Support
+
+The MCP bridge now supports accumulating multiple messages from lazygit before retrieval:
+
+- **Queue Management**: Messages are stored in an in-memory array
+- **Deduplication**: SHA-256 hash prevents duplicate messages (based on file + line + comment + time)
+- **Retention Limit**: Maximum 10 messages retained in queue
+- **Batch Retrieval**: All accumulated messages returned in single response
+- **Clear-on-Read**: Queue and file cleared after successful tool call
+
+### Message Format in Responses
+
+When multiple messages are present, they are formatted as:
+
+```
+Message 1:
+File: path/to/file1.go
+Line: 42
+Comment: User comment 1
+Time: 2025-07-01T10:30:00Z
+
+Please improve this code.
+
+--------------------------------------------------
+
+Message 2:
+File: path/to/file2.go
+Line: 89
+Comment: User comment 2  
+Time: 2025-07-01T10:33:00Z
+
+Please improve this code.
+```
+
+### File Cleanup Behavior
+
+- **Before**: File deleted immediately after reading
+- **After**: File deleted only when MCP tool is called
+- **Reason**: Allows multiple rapid comments to accumulate
 
 ## Error Handling
 

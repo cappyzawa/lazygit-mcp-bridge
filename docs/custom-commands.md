@@ -60,11 +60,18 @@ Additional context: $ARGUMENTS
 - No need for manual "I commented" notifications
 - Instant checks with short command input
 - Customizable through arguments
+- **Multiple messages processed in single command**
 
 ### 3. Consistency
 - Shareable commands across team members
 - Version-controlled as project-specific settings
 - Standardized workflow
+
+### 4. Multiple Message Support (New!)
+- **Batch Processing**: All accumulated comments processed together
+- **No Message Loss**: Rapid commenting won't overwrite previous messages
+- **Smart Deduplication**: Duplicate comments automatically filtered
+- **Retention Management**: Up to 10 most recent messages maintained
 
 ## Workflow
 
@@ -72,12 +79,14 @@ Additional context: $ARGUMENTS
 1. Create comment in lazygit
 2. Manually tell Claude "I commented"
 3. Claude checks messages using MCP tool
-4. Receive code improvement suggestions
+4. Receive single message at a time
+5. Repeat for each comment
 
-### Custom Command Workflow
-1. Create comment in lazygit
+### Custom Command Workflow (with Multiple Message Support)
+1. Create multiple comments in lazygit (they accumulate automatically)
 2. Execute `/project:lg` in Claude
-3. Instantly receive concise code improvement suggestions
+3. Instantly receive all accumulated messages with clear separation
+4. All comments processed in single response
 
 ## Advanced Usage Examples
 
@@ -95,6 +104,19 @@ Additional context: $ARGUMENTS
 /project:lg follow Go idioms
 /project:lg apply Rust best practices
 /project:lg prioritize TypeScript type safety
+```
+
+### Multiple Message Scenarios
+
+```
+# After commenting on 3 different files
+/project:lg provide comprehensive review of all changes
+
+# For batch refactoring
+/project:lg focus on consistent patterns across all files
+
+# Code review preparation
+/project:lg prepare summary for pull request
 ```
 
 ## Troubleshooting
@@ -147,5 +169,14 @@ Custom commands significantly improve the lazygit-mcp-bridge user experience, pa
 - **Efficiency**: No manual notifications required
 - **Reusability**: Usable in any Claude session
 - **Consistency**: Standardized workflow across teams
+- **Multiple Message Support**: Batch processing of accumulated comments
+- **No Data Loss**: Robust message accumulation prevents comment overwrites
 
-Use these commands to achieve more efficient code review and improvement cycles.
+### Key Improvements in v2.0
+
+1. **Multiple Message Accumulation**: Comments no longer overwrite each other
+2. **Smart Deduplication**: Prevents duplicate message processing
+3. **Batch Processing**: All messages delivered together with clear separation
+4. **Retention Management**: Automatic cleanup with configurable limits
+
+Use these commands to achieve more efficient code review and improvement cycles with comprehensive multi-file analysis capabilities.

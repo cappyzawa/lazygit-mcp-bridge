@@ -2,11 +2,14 @@ package main
 
 import (
 	"bufio"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"  
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/fsnotify/fsnotify"
 )
@@ -81,8 +84,18 @@ type ToolSchema struct {
 	Required   []string               `json:"required,omitempty"`
 }
 
+// Message structure for storage
+type LazygitMessage struct {
+	File        string `json:"file"`
+	Line        string `json:"line"`
+	Comment     string `json:"comment"`
+	ProjectRoot string `json:"project_root"`
+	Time        string `json:"time"`
+	Hash        string `json:"hash"` // For deduplication
+}
+
 // Message queue for lazygit messages
-var messageQueue []string
+var messageQueue []LazygitMessage
 var messageFile string
 var currentProjectRoot string
 var subscribers []string // Track resource subscribers
@@ -175,7 +188,7 @@ func readMessageFile() {
 		return
 	}
 
-	var message struct {
+	var rawMessage struct {
 		File        string `json:"file"`
 		Line        string `json:"line"`
 		Comment     string `json:"comment"`
@@ -183,29 +196,52 @@ func readMessageFile() {
 		Time        string `json:"time"`
 	}
 
-	if err := json.Unmarshal(data, &message); err != nil {
+	if err := json.Unmarshal(data, &rawMessage); err != nil {
 		log.Printf("Failed to parse message: %v", err)
 		return
 	}
 
 	// Check if message is for this project
-	if message.ProjectRoot != "" && message.ProjectRoot != currentProjectRoot {
-		log.Printf("Message for different project: %s (current: %s)", message.ProjectRoot, currentProjectRoot)
+	if rawMessage.ProjectRoot != "" && rawMessage.ProjectRoot != currentProjectRoot {
+		log.Printf("Message for different project: %s (current: %s)", rawMessage.ProjectRoot, currentProjectRoot)
 		return
 	}
 
-	// Add to message queue
-	formattedMessage := fmt.Sprintf("File: %s\nLine: %s\nComment: %s\n\nPlease improve this code.", 
-		message.File, message.Line, message.Comment)
-	messageQueue = append(messageQueue, formattedMessage)
+	// Create hash for deduplication (content + time)
+	hashInput := strings.Join([]string{rawMessage.File, rawMessage.Line, rawMessage.Comment, rawMessage.Time}, "|")
+	hash := sha256.Sum256([]byte(hashInput))
+	hashString := hex.EncodeToString(hash[:])
+
+	// Check for duplicates
+	for _, existingMsg := range messageQueue {
+		if existingMsg.Hash == hashString {
+			log.Printf("Duplicate message ignored: %s", rawMessage.Comment)
+			return
+		}
+	}
+
+	// Create new message with hash
+	message := LazygitMessage{
+		File:        rawMessage.File,
+		Line:        rawMessage.Line,
+		Comment:     rawMessage.Comment,
+		ProjectRoot: rawMessage.ProjectRoot,
+		Time:        rawMessage.Time,
+		Hash:        hashString,
+	}
+
+	// Add to message queue with limit (keep last 10 messages)
+	messageQueue = append(messageQueue, message)
+	if len(messageQueue) > 10 {
+		messageQueue = messageQueue[1:]
+	}
 	
-	log.Printf("Message received for project: %s", currentProjectRoot)
+	log.Printf("Message received for project: %s (queue length: %d)", currentProjectRoot, len(messageQueue))
 
 	// Send notification to Claude
 	sendNotification(fmt.Sprintf("New message from lazygit: %s", message.Comment))
 
-	// Clean up the message file
-	os.Remove(messageFile)
+	// Note: File cleanup moved to MCP tool call to allow multiple messages
 }
 
 func handleMCPRequest(line string) {
@@ -275,20 +311,34 @@ func handleResourcesRead(req MCPRequest) {
 
 	if uri == "lazygit://messages" {
 		if len(messageQueue) > 0 {
-			// Get latest message
-			message := messageQueue[len(messageQueue)-1]
+			// Format all messages
+			var allMessages []string
+			for i, msg := range messageQueue {
+				formattedMessage := fmt.Sprintf("Message %d:\nFile: %s\nLine: %s\nComment: %s\nTime: %s\n\nPlease improve this code.", 
+					i+1, msg.File, msg.Line, msg.Comment, msg.Time)
+				allMessages = append(allMessages, formattedMessage)
+			}
+			
+			// Join all messages with separator
+			finalMessage := strings.Join(allMessages, "\n" + strings.Repeat("-", 50) + "\n\n")
+			
 			result := map[string]interface{}{
 				"contents": []map[string]interface{}{
 					{
 						"uri":      uri,
 						"mimeType": "text/plain",
-						"text":     message,
+						"text":     finalMessage,
 					},
 				},
 			}
 			sendResponse(req.ID, result)
-			// Clear the message after reading
-			messageQueue = messageQueue[:len(messageQueue)-1]
+			
+			// Clear message queue and cleanup file after successful retrieval
+			messageQueue = []LazygitMessage{}
+			if _, err := os.Stat(messageFile); err == nil {
+				os.Remove(messageFile)
+				log.Printf("Message file cleaned up after retrieval")
+			}
 		} else {
 			result := map[string]interface{}{
 				"contents": []map[string]interface{}{
@@ -326,18 +376,33 @@ func handleToolsCall(req MCPRequest) {
 
 	if name == "check_lazygit_messages" {
 		if len(messageQueue) > 0 {
-			message := messageQueue[len(messageQueue)-1]
-			messageQueue = messageQueue[:len(messageQueue)-1]
+			// Format all messages
+			var allMessages []string
+			for i, msg := range messageQueue {
+				formattedMessage := fmt.Sprintf("Message %d:\nFile: %s\nLine: %s\nComment: %s\nTime: %s\n\nPlease improve this code.", 
+					i+1, msg.File, msg.Line, msg.Comment, msg.Time)
+				allMessages = append(allMessages, formattedMessage)
+			}
+			
+			// Join all messages with separator
+			finalMessage := strings.Join(allMessages, "\n" + strings.Repeat("-", 50) + "\n\n")
 			
 			result := map[string]interface{}{
 				"content": []map[string]interface{}{
 					{
 						"type": "text",
-						"text": message,
+						"text": finalMessage,
 					},
 				},
 			}
 			sendResponse(req.ID, result)
+			
+			// Clear message queue and cleanup file after successful retrieval
+			messageQueue = []LazygitMessage{}
+			if _, err := os.Stat(messageFile); err == nil {
+				os.Remove(messageFile)
+				log.Printf("Message file cleaned up after retrieval")
+			}
 		} else {
 			result := map[string]interface{}{
 				"content": []map[string]interface{}{
