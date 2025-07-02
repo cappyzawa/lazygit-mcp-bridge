@@ -6,15 +6,39 @@ This document explains how to use custom commands to efficiently integrate lazyg
 
 Previously, when checking comments from lazygit in Claude, you had to manually say "I commented" each time. Custom commands allow you to efficiently check messages without depending on conversation context.
 
+**Key Feature**: No shell scripts required! The `lazygit-mcp-bridge` binary includes both server and client functionality.
+
 ## Setup
 
-### 1. Create Command Directory
+### 1. Configure lazygit (Required)
+
+Add to your `~/.config/jesseduffield/lazygit/config.yml`:
+
+```yaml
+customCommands:
+- key: "<c-y>"
+  context: "staging"
+  description: "Send comment to AI assistant"
+  loadingText: "Sending comment…"
+  prompts:
+  - type: "input"
+    title: "Comment:"
+  command: |
+    lazygit-mcp-bridge send \
+      --file "{{ .SelectedPath }}" \
+      --line "{{ .SelectedLine }}" \
+      --comment "{{ index .PromptResponses 0 }}"
+```
+
+No shell scripts needed! The `lazygit-mcp-bridge send` command handles everything.
+
+### 2. Create Command Directory
 
 ```bash
 mkdir -p /path/to/your/project/.claude/commands
 ```
 
-### 2. Create Command Files
+### 3. Create Command Files
 
 Create a `.claude/commands/` directory in your project root and place the following command files.
 
@@ -75,18 +99,19 @@ Additional context: $ARGUMENTS
 
 ## Workflow
 
-### Traditional Workflow
-1. Create comment in lazygit
+### Traditional Workflow (Shell Script Method)
+1. Create comment in lazygit using shell script
 2. Manually tell Claude "I commented"
 3. Claude checks messages using MCP tool
 4. Receive single message at a time
 5. Repeat for each comment
 
-### Custom Command Workflow (with Multiple Message Support)
-1. Create multiple comments in lazygit (they accumulate automatically)
-2. Execute `/project:lg` in Claude
-3. Instantly receive all accumulated messages with clear separation
-4. All comments processed in single response
+### Modern Workflow (Integrated Binary)
+1. Create multiple comments in lazygit (binary handles everything)
+2. Messages accumulate automatically
+3. Execute `/project:lg` in Claude
+4. Instantly receive all accumulated messages with clear separation
+5. All comments processed in single response
 
 ## Advanced Usage Examples
 
@@ -172,11 +197,12 @@ Custom commands significantly improve the lazygit-mcp-bridge user experience, pa
 - **Multiple Message Support**: Batch processing of accumulated comments
 - **No Data Loss**: Robust message accumulation prevents comment overwrites
 
-### Key Improvements in v2.0
+### Key Features
 
 1. **Multiple Message Accumulation**: Comments no longer overwrite each other
-2. **Smart Deduplication**: Prevents duplicate message processing
+2. **Smart Deduplication**: Prevents duplicate message processing  
 3. **Batch Processing**: All messages delivered together with clear separation
 4. **Retention Management**: Automatic cleanup with configurable limits
+5. **Integrated Binary**: No external dependencies or shell scripts required
 
 Use these commands to achieve more efficient code review and improvement cycles with comprehensive multi-file analysis capabilities.

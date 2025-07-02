@@ -18,8 +18,9 @@
          │ and enters comment          │                             │
          │                             │                             │
          ├─────────────────────────────►                             │
-         │ 2. Write JSON message       │                             │
-         │ to ~/.config/.../mcp-       │                             │
+         │ 2. Execute 'send' command   │                             │
+         │ which writes JSON to        │                             │
+         │ ~/.config/.../mcp-          │                             │
          │ messages.json               │                             │
          │                             │                             │
          │                             │ 3. File watcher detects     │
@@ -40,7 +41,7 @@
 
 - **Custom Command**: Configured in `~/.config/jesseduffield/lazygit/config.yml`
 - **Key Binding**: `Ctrl+Y` in staging context
-- **Script**: `send-to-ai.sh` writes JSON messages
+- **Direct Integration**: `lazygit-mcp-bridge send` command (no shell scripts needed)
 
 ### 2. Message Format
 
@@ -67,9 +68,26 @@
 }
 ```
 
-### 3. MCP Bridge Server
+### 3. MCP Bridge Application
+
+#### Subcommand Architecture
+
+The application provides two main subcommands:
+
+1. **`server`**: Runs as MCP server
+   - Watches for message file changes
+   - Implements MCP protocol
+   - Manages message queue with deduplication
+   
+2. **`send`**: Client for sending messages
+   - Replaces shell script functionality
+   - Creates JSON message file
+   - Validates input parameters
+
+#### Technical Details
 
 - **Language**: Go
+- **CLI Framework**: Cobra for command-line interface
 - **File Watching**: Uses `fsnotify` to monitor message file
 - **Message Queue**: In-memory array for multiple pending messages
 - **Deduplication**: SHA-256 hash-based duplicate message prevention
@@ -104,7 +122,7 @@
 
 1. **User Action**: User reviews code in lazygit and presses `Ctrl+Y`
 2. **Comment Input**: User enters a comment about the code
-3. **Message Creation**: Shell script creates/overwrites JSON message file
+3. **Message Creation**: `lazygit-mcp-bridge send` command creates/overwrites JSON message file
 4. **File Detection**: MCP server detects file write via `fsnotify`
 5. **Message Processing**: Server reads, validates, and stores message with deduplication
 6. **Message Accumulation**: Multiple messages are stored in memory array (up to 10)

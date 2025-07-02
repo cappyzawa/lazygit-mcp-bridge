@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"bufio"
@@ -100,7 +100,7 @@ var messageFile string
 var currentProjectRoot string
 var subscribers []string // Track resource subscribers
 
-func main() {
+func Run() error {
 	// Setup message file path following XDG Base Directory spec
 	configDir := getConfigDir()
 	messageFile = filepath.Join(configDir, "jesseduffield/lazygit/mcp-messages.json")
@@ -118,6 +118,12 @@ func main() {
 		line := scanner.Text()
 		handleMCPRequest(line)
 	}
+	
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+	
+	return nil
 }
 
 func getConfigDir() string {

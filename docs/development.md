@@ -4,23 +4,30 @@
 
 ```
 lazygit-mcp-bridge/
-├── main.go              # MCP server implementation
-├── go.mod               # Go module definition
-├── go.sum               # Dependency checksums
-├── README.md            # User documentation
-├── send-to-ai.sh        # Example shell script
-├── .gitignore           # Git ignore patterns
-└── docs/
-    ├── architecture.md  # System architecture
-    ├── mcp-protocol.md  # Protocol specification
-    └── development.md   # This file
+├── cmd/lazygit-mcp-bridge/    # CLI entry point
+│   └── main.go                # Cobra command definitions
+├── internal/                  # Internal packages
+│   ├── server/                # MCP server implementation
+│   │   └── server.go
+│   └── client/                # Send command implementation
+│       └── client.go
+├── docs/                      # Documentation
+│   ├── architecture.md        # System architecture
+│   ├── mcp-protocol.md        # Protocol specification
+│   ├── custom-commands.md     # Custom commands guide
+│   └── development.md         # This file
+├── Makefile                   # Build automation
+├── go.mod                     # Go module definition
+├── go.sum                     # Dependency checksums
+├── README.md                  # User documentation
+└── .gitignore                 # Git ignore patterns
 ```
 
 ## Development Setup
 
 ### Prerequisites
 
-- Go 1.21 or later
+- Go 1.24 or later
 - Git
 - lazygit (for testing)
 - Claude Code or other MCP-compatible AI assistant
@@ -36,15 +43,51 @@ cd lazygit-mcp-bridge
 go mod download
 
 # Build the binary
-go build -o lazygit-mcp-bridge
+make build
+
+# Or build manually
+go build -o build/lazygit-mcp-bridge cmd/lazygit-mcp-bridge/main.go
 
 # Install to $GOPATH/bin
-go install
+make install
+
+# Or install manually
+go install ./cmd/lazygit-mcp-bridge
 ```
 
 ## Code Structure
 
 ### Main Components
+
+#### CLI Entry Point (cmd/lazygit-mcp-bridge/main.go)
+
+```go
+// Root command
+var rootCmd = &cobra.Command{
+    Use:   "lazygit-mcp-bridge",
+    Short: "Bridge between lazygit and AI assistants using MCP",
+}
+
+// Server subcommand
+var serverCmd = &cobra.Command{
+    Use:   "server",
+    Short: "Run as MCP server",
+    RunE: func(cmd *cobra.Command, args []string) error {
+        return server.Run()
+    },
+}
+
+// Send subcommand
+var sendCmd = &cobra.Command{
+    Use:   "send",
+    Short: "Send a message from lazygit to AI",
+    RunE: func(cmd *cobra.Command, args []string) error {
+        return client.Send(file, line, comment)
+    },
+}
+```
+
+#### Server Package (internal/server/server.go)
 
 ```go
 // MCP Request/Response types
@@ -65,55 +108,110 @@ type LazygitMessage struct {
     Hash        string `json:"hash"` // SHA-256 for deduplication
 }
 
-// Message queue for storing multiple lazygit messages
-var messageQueue []LazygitMessage
+// Main server function
+func Run() error { ... }
+```
 
-// File watcher for monitoring message file
-func watchMessageFile() { ... }
+#### Client Package (internal/client/client.go)
 
-// MCP request handler
-func handleMCPRequest(line string) { ... }
+```go
+// Send message to the MCP server
+func Send(file, line, comment string) error {
+    // Create message
+    // Write to JSON file
+    // Return success/error
+}
 ```
 
 ### Key Functions Flow
 
 ```
 main()
-  ├── watchMessageFile() [goroutine]
-  │   └── readMessageFile()
-  └── handleMCPRequest() [main loop]
-      ├── handleInitialize()
-      ├── handleResourcesList()
-      ├── handleResourcesRead()
-      ├── handleToolsList()
-      └── handleToolsCall()
+  ├── rootCmd.Execute()
+  │   ├── serverCmd
+  │   │   └── server.Run()
+  │   │       ├── watchMessageFile() [goroutine]
+  │   │       │   └── readMessageFile()
+  │   │       └── handleMCPRequest() [main loop]
+  │   │           ├── handleInitialize()
+  │   │           ├── handleResourcesList()
+  │   │           ├── handleResourcesRead()
+  │   │           ├── handleToolsList()
+  │   │           └── handleToolsCall()
+  │   └── sendCmd
+  │       └── client.Send()
+  │           ├── getConfigDir()
+  │           ├── getCurrentProjectRoot()
+  │           └── os.WriteFile()
+```
+
+## Build System
+
+### Makefile Targets
+
+The project includes a Makefile for common development tasks:
+
+```bash
+# Build the binary
+make build
+
+# Clean build artifacts
+make clean
+
+# Install to GOPATH/bin
+make install
+
+# Run tests
+make test
+
+# Run server for development
+make run-server
+```
+
+### Manual Build
+
+If you prefer not to use make:
+
+```bash
+# Build
+go build -o build/lazygit-mcp-bridge cmd/lazygit-mcp-bridge/main.go
+
+# Install
+go install ./cmd/lazygit-mcp-bridge
 ```
 
 ## Testing
 
 ### Manual Testing
 
-1. **Test file watching:**
+1. **Test server mode:**
 ```bash
 # Terminal 1: Run the MCP server
-./lazygit-mcp-bridge
+./build/lazygit-mcp-bridge server
 
-# Terminal 2: Create a test message
-echo '{"file":"test.go","line":"1","comment":"test","time":"2025-07-01T00:00:00Z"}' > \
-  ~/.config/jesseduffield/lazygit/claude-messages.json
+# Terminal 2: Test the send command
+./build/lazygit-mcp-bridge send --file test.go --line 42 --comment "Add error handling"
 ```
 
 2. **Test MCP protocol:**
 ```bash
 # Send initialize request
-echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' | ./lazygit-mcp-bridge
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' | ./build/lazygit-mcp-bridge server
+```
+
+3. **Test with lazygit:**
+```bash
+# Make sure the binary is in PATH
+make install
+
+# Open lazygit and press Ctrl+Y
 ```
 
 ### Integration Testing
 
 ```bash
 # Start Claude Code with the MCP server
-claude mcp add test-bridge ./lazygit-mcp-bridge
+claude mcp add test-bridge "lazygit-mcp-bridge server"
 claude
 
 # In lazygit, press Ctrl+Y and enter a comment
