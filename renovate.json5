@@ -34,7 +34,8 @@
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true,
       "automergeType": "pr",
-      "requiredStatusChecks": null // Wait for all CI checks to pass
+      "requiredStatusChecks": null, // Wait for all CI checks to pass
+      "ignoreTests": false // Ensure tests must pass before automerge
     },
     {
       // Go dependencies - manual review for major updates
@@ -49,7 +50,8 @@
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true,
       "automergeType": "pr",
-      "addLabels": ["github-actions"]
+      "addLabels": ["github-actions"],
+      "ignoreTests": false // Ensure tests must pass before automerge
     },
     {
       // GitHub Actions - manual review for major updates
@@ -63,7 +65,8 @@
       "matchManagers": ["dockerfile"],
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true,
-      "automergeType": "pr"
+      "automergeType": "pr",
+      "ignoreTests": false // Ensure tests must pass before automerge
     },
     {
       // Group Go dependencies together
@@ -94,7 +97,8 @@
   "vulnerabilityAlerts": {
     "enabled": true,
     "automerge": true,
-    "schedule": ["at any time"]
+    "schedule": ["at any time"],
+    "ignoreTests": false // Ensure tests must pass even for security updates
   },
   
   // PR settings
