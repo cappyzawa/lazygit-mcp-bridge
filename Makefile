@@ -16,6 +16,7 @@ LDFLAGS = -s -w \
 	-X main.date=$(DATE)
 
 build:
+	mkdir -p $(BUILD_DIR)
 	go build -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) ./$(CMD_DIR)
 
 clean:
