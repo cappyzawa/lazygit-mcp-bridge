@@ -16,13 +16,13 @@ LDFLAGS = -s -w \
 	-X main.date=$(DATE)
 
 build:
-	go build -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) $(CMD_DIR)/main.go
+	go build -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) ./$(CMD_DIR)
 
 clean:
 	rm -rf $(BUILD_DIR)
 
 install:
-	go install -ldflags "$(LDFLAGS)" $(CMD_DIR)
+	go install -ldflags "$(LDFLAGS)" ./$(CMD_DIR)
 
 test:
 	go test ./...
