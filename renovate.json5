@@ -1,121 +1,134 @@
 {
-  // Renovate configuration for lazygit-mcp-bridge
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  
-  // Basic configuration
-  "extends": [
-    "config:recommended",
-    ":semanticCommitTypeAll(deps)"
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+    ':semanticCommitTypeAll(deps)',
   ],
-  
-  // Repository settings
-  "timezone": "Asia/Tokyo",
-  "schedule": ["before 4am on monday"],
-  
-  // Commit and PR settings
-  "commitMessagePrefix": "deps:",
-  "commitMessageAction": "update",
-  "commitMessageTopic": "{{depName}}",
-  "commitMessageExtra": "to {{newVersion}}",
-  "semanticCommits": "enabled",
-  "addLabels": ["dependencies"],
-  
-  // Automerge configuration
-  "platformAutomerge": true,
-  "automerge": true,
-  "automergeType": "pr",
-  "automergeStrategy": "squash",
-  
-  // Package rules
-  "packageRules": [
-    {
-      // Go dependencies - automerge minor and patch updates
-      "matchManagers": ["gomod"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true,
-      "automergeType": "pr",
-      "requiredStatusChecks": null // Wait for all CI checks to pass
-    },
-    {
-      // Go dependencies - manual review for major updates
-      "matchManagers": ["gomod"],
-      "matchUpdateTypes": ["major"],
-      "automerge": false,
-      "addLabels": ["major-update"]
-    },
-    {
-      // GitHub Actions - automerge minor and patch updates
-      "matchManagers": ["github-actions"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true,
-      "automergeType": "pr",
-      "addLabels": ["github-actions"]
-    },
-    {
-      // GitHub Actions - manual review for major updates
-      "matchManagers": ["github-actions"],
-      "matchUpdateTypes": ["major"],
-      "automerge": false,
-      "addLabels": ["major-update", "github-actions"]
-    },
-    {
-      // Docker - if we add any docker dependencies later
-      "matchManagers": ["dockerfile"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true,
-      "automergeType": "pr"
-    },
-    {
-      // Group Go dependencies together
-      "matchManagers": ["gomod"],
-      "groupName": "Go dependencies",
-      "groupSlug": "go-deps"
-    },
-    {
-      // Group GitHub Actions together
-      "matchManagers": ["github-actions"],
-      "groupName": "GitHub Actions",
-      "groupSlug": "github-actions"
-    }
+  timezone: 'Asia/Tokyo',
+  schedule: [
+    'before 4am on monday',
   ],
-  
-  // Go specific configuration
-  "gomod": {
-    "enabled": true
-  },
-  
-  // GitHub Actions specific configuration
-  "github-actions": {
-    "enabled": true,
-    "fileMatch": ["\\.github/workflows/.*\\.ya?ml$"]
-  },
-  
-  // Vulnerability alerts
-  "vulnerabilityAlerts": {
-    "enabled": true,
-    "automerge": true,
-    "schedule": ["at any time"]
-  },
-  
-  // PR settings
-  "prHourlyLimit": 5,
-  "prConcurrentLimit": 3,
-  "branchConcurrentLimit": 10,
-  
-  // Ignore certain dependencies
-  "ignoreDeps": [
-    // Add any dependencies to ignore here
+  commitMessagePrefix: 'deps:',
+  commitMessageAction: 'update',
+  commitMessageTopic: '{{depName}}',
+  commitMessageExtra: 'to {{newVersion}}',
+  semanticCommits: 'enabled',
+  addLabels: [
+    'dependencies',
   ],
-  
-  // Custom managers for special cases
-  "customManagers": [
+  platformAutomerge: true,
+  automerge: true,
+  automergeType: 'pr',
+  automergeStrategy: 'squash',
+  packageRules: [
     {
-      // Handle Go version in go.mod
-      "customType": "regex",
-      "fileMatch": ["^go\\.mod$"],
-      "matchStrings": ["go (?<currentValue>\\d+\\.\\d+)"],
-      "datasourceTemplate": "golang-version",
-      "depNameTemplate": "go"
-    }
-  ]
+      matchManagers: [
+        'gomod',
+      ],
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+      automerge: true,
+      automergeType: 'pr',
+      ignoreTests: true,
+    },
+    {
+      matchManagers: [
+        'gomod',
+      ],
+      matchUpdateTypes: [
+        'major',
+      ],
+      automerge: false,
+      addLabels: [
+        'major-update',
+      ],
+    },
+    {
+      matchManagers: [
+        'github-actions',
+      ],
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+      automerge: true,
+      automergeType: 'pr',
+      addLabels: [
+        'github-actions',
+      ],
+    },
+    {
+      matchManagers: [
+        'github-actions',
+      ],
+      matchUpdateTypes: [
+        'major',
+      ],
+      automerge: false,
+      addLabels: [
+        'major-update',
+        'github-actions',
+      ],
+    },
+    {
+      matchManagers: [
+        'dockerfile',
+      ],
+      matchUpdateTypes: [
+        'minor',
+        'patch',
+      ],
+      automerge: true,
+      automergeType: 'pr',
+    },
+    {
+      matchManagers: [
+        'gomod',
+      ],
+      groupName: 'Go dependencies',
+      groupSlug: 'go-deps',
+    },
+    {
+      matchManagers: [
+        'github-actions',
+      ],
+      groupName: 'GitHub Actions',
+      groupSlug: 'github-actions',
+    },
+  ],
+  gomod: {
+    enabled: true,
+  },
+  'github-actions': {
+    enabled: true,
+    managerFilePatterns: [
+      '/\\.github/workflows/.*\\.ya?ml$/',
+    ],
+  },
+  vulnerabilityAlerts: {
+    enabled: true,
+    automerge: true,
+    schedule: [
+      'at any time',
+    ],
+  },
+  prHourlyLimit: 5,
+  prConcurrentLimit: 3,
+  branchConcurrentLimit: 10,
+  ignoreDeps: [],
+  customManagers: [
+    {
+      customType: 'regex',
+      managerFilePatterns: [
+        '/^go\\.mod$/',
+      ],
+      matchStrings: [
+        'go (?<currentValue>\\d+\\.\\d+)',
+      ],
+      datasourceTemplate: 'golang-version',
+      depNameTemplate: 'go',
+    },
+  ],
 }
